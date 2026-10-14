@@ -188,7 +188,7 @@
       directory.u32(16, crc); directory.u32(20, blob.size); directory.u32(24, blob.size); directory.u16(28, filename.length); directory.u32(42, offset);
       central.push(directory.bytes, filename); centralSize += 46 + filename.length;
       offset += 30 + filename.length + blob.size;
-      if (offset + centralSize + 22 > MAX_BYTES) throw new Error('ZIPが2 GBを超えます。処理する音声を分けてください。');
+      if (offset + centralSize + 22 > MAX_BYTES) throw new Error('ZIPが 2 GBを超えます。処理する音声を分けてください。');
       onProgress((i + 1) / entries.length);
     }
     const end = zipHeader(22);
