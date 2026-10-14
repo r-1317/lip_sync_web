@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="音素ラベルと立ち絵から音声付きの透過MOVを作成する静的Webアプリ。">
+  <title>LipSync Web</title>
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script src="js/core.js" defer></script>
+  <script src="js/media.js" defer></script>
+  <script src="js/app.js" defer></script>
+</head>
+<body>
+  <svg class="icon-defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs>
+    <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h7m4 0h5M4 17h3m4 0h9"/><circle cx="13" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1.5"/><path d="m3 17 5-5 4 4 4-7 5 8"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V3m-5 5 5-5 5 5M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v13m-5-5 5 5 5-5M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></symbol>
+    <symbol id="i-audio" viewBox="0 0 24 24"><path d="M5 10v4m4-8v12m4-15v18m4-14v10m4-7v4"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Zm0 0v6h6M8 13h8m-8 4h5"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="m8 4 12 8-12 8Z"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14m8-14v14"/></symbol>
+    <symbol id="i-reset" viewBox="0 0 24 24"><path d="M3 10a9 9 0 1 1 2 9M3 4v6h6"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+  </defs></svg>
+  <aside class="sidebar">
+    <a class="brand" href="index.html" aria-label="LipSync Web ホーム"><img src="assets/logo.svg" width="42" height="42" alt="LS"><span>LipSync <b>Web</b></span></a>
+    <div class="sidebar-label">ワークスペース</div>
+    <nav aria-label="メインメニュー">
+      <button class="nav-button active" data-page="single" aria-current="page"><svg><use href="#i-image"/></svg>素材とプレビュー</button>
+      <button class="nav-button" data-page="mapping"><svg><use href="#i-sliders"/></svg>口形の割り当て</button>
+      <button class="nav-button" data-page="batch"><svg><use href="#i-folder"/></svg>フォルダー一括処理</button>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="sidebar-label">プリセット</div>
+      <button id="load-preset" class="sidebar-action"><svg><use href="#i-upload"/></svg>読み込む</button>
+      <button id="save-preset" class="sidebar-action"><svg><use href="#i-download"/></svg>画像と設定を保存</button>
+      <input id="preset-input" type="file" accept=".json,application/json" hidden>
+      <div class="local-note"><span class="status-dot"></span>ファイルは端末内で処理</div>
+      <a class="source-link" href="https://github.com/r-1317/lip_sync_tool" target="_blank" rel="noopener noreferrer">lip_sync_tool をもとに作成 <span>↗</span></a>
+    </div>
+  </aside>
+
+  <main>
+    <header class="page-header"><div><div class="eyebrow">LIPSYNC WEB</div><h1 id="page-title">素材とプレビュー</h1></div><div id="status" class="status-pill" role="status"><span class="status-dot"></span><span id="status-text">素材を選択してください</span></div></header>
+    <div id="message" class="message" role="alert" hidden></div>
+    <section id="single-page" class="page-panel">
+      <div class="workspace-grid">
+        <div class="setup-column">
+          <section class="card settings-card">
+            <div class="section-heading"><h2><span class="section-number">01</span>口パクの設定</h2></div>
+            <div class="settings-row"><div><label class="field-label">画像の枚数</label><div class="segmented" aria-label="画像の枚数"><button data-mode="2" class="selected" aria-pressed="true">2枚</button><button data-mode="3" aria-pressed="false">3枚</button><button data-mode="9" aria-pressed="false">9枚</button></div></div><div class="fps-field"><label class="field-label" for="fps">フレームレート</label><div class="number-wrap"><input id="fps" type="number" min="1" max="120" step="0.001" value="24"><span>fps</span></div></div></div>
+          </section>
+          <section class="card">
+            <div class="section-heading"><h2><span class="section-number">02</span>音声とラベル</h2></div>
+            <label class="file-drop" id="audio-drop"><span class="file-icon"><svg><use href="#i-audio"/></svg></span><span class="file-copy"><span class="field-label">音声ファイル</span><span id="audio-name">クリックまたはドロップ</span><small id="audio-detail">WAV / MP3 / FLAC / M4A など</small></span><svg class="upload-icon"><use href="#i-upload"/></svg><input id="audio-input" type="file" accept="audio/*,.wav,.wave,.mp3,.flac,.m4a,.aac,.aif,.aiff,.ogg,.oga,.opus,.webm"></label>
+            <label class="file-drop" id="label-drop"><span class="file-icon"><svg><use href="#i-file"/></svg></span><span class="file-copy"><span class="field-label">ラベルファイル <span class="required">必須</span></span><span id="label-name">クリックまたはドロップ</span><small id="label-detail">.lab · UTF-8 · 時刻は100 ns単位</small></span><svg class="upload-icon"><use href="#i-upload"/></svg><input id="label-input" type="file" accept=".lab"></label>
+          </section>
+          <section class="card images-card">
+            <div class="section-heading"><h2><span class="section-number">03</span>立ち絵画像</h2><span id="image-count" class="count-badge">0 / 2</span></div>
+            <p class="hint">同じサイズの透過PNG / WebPを指定</p>
+            <div id="image-slots" class="image-slots"></div>
+            <div id="size-summary" class="size-summary"><svg><use href="#i-image"/></svg><span>元の画像サイズで書き出します</span></div>
+          </section>
+        </div>
+
+        <section class="card preview-card">
+          <div class="preview-heading"><h2>プレビュー</h2><div class="preview-backgrounds" aria-label="プレビューの背景"><button data-background="checker" class="checker selected" aria-label="市松模様" aria-pressed="true"></button><button data-background="white" class="white" aria-label="白" aria-pressed="false"></button><button data-background="gray" class="gray" aria-label="グレー" aria-pressed="false"></button></div></div>
+          <div id="preview-stage" class="preview-stage checker"><canvas id="preview-canvas" width="640" height="640" aria-label="立ち絵プレビュー"></canvas><div id="preview-empty" class="preview-empty"><div class="empty-image"><svg><use href="#i-image"/></svg></div><p>立ち絵画像を選択</p><span>ここで口パクを確認できます</span></div><span class="alpha-badge">透過背景</span><span id="current-shape" class="current-shape" hidden>X · 閉じる</span></div>
+          <div class="timeline-section"><div class="time-labels"><span id="current-time">00:00.000</span><span id="duration-time">00:00.000</span></div><div id="timeline" class="timeline"><canvas id="waveform" width="800" height="70" aria-hidden="true"></canvas><div id="cue-track" class="cue-track" aria-hidden="true"></div><div id="playhead" class="playhead"></div><input id="seek" type="range" min="0" max="1" step="0.001" value="0" aria-label="再生位置" disabled></div><div class="playback-controls"><button id="restart" class="icon-button" aria-label="先頭に戻る" disabled><svg><use href="#i-reset"/></svg></button><button id="play" class="play-button" aria-label="再生" disabled><svg><use href="#i-play"/></svg></button><span id="playback-label">音声とラベルを選択</span><span id="preview-size" class="preview-size">— × — px</span></div></div>
+          <div class="export-section"><div class="export-title"><h3>書き出し</h3><span class="format-badge">MOV <span>·</span> RGBA</span></div><label class="field-label" for="output-name">ファイル名</label><div class="output-name-wrap"><input id="output-name" type="text" value="output" maxlength="160" spellcheck="false"><span>.mov</span></div><button id="export" class="primary-button" disabled><svg><use href="#i-download"/></svg>透過MOVを書き出す<svg class="button-arrow"><use href="#i-chevron"/></svg></button><p class="export-note">QuickTime Animation · 音声付き · 背景透過</p><a id="movie-download" class="download-result" hidden><svg><use href="#i-download"/></svg><span></span></a></div>
+        </section>
+      </div>
+    </section>
+
+    <section id="mapping-page" class="page-panel" hidden>
+      <section class="card mapping-card"><div class="section-heading"><h2>口形と画像の対応</h2><button id="reset-mapping" class="text-button"><svg><use href="#i-reset"/></svg>初期値に戻す</button></div><p class="hint">ラベルの音素をA〜H / Xに変換し、割り当てた画像を表示します。</p><div class="table-scroll"><table class="mapping-table"><thead><tr><th>口形</th><th>音素 / 口の形</th><th>使用する画像</th><th>画像</th></tr></thead><tbody id="mapping-body"></tbody></table></div></section>
+    </section>
+
+    <section id="batch-page" class="page-panel" hidden>
+      <section class="card batch-card"><div class="section-heading"><h2>入力フォルダー</h2><span class="format-badge">MOV → ZIP</span></div><p class="hint">フォルダー直下の音声と同名の.labを使用します。画像・口形・FPSは共通設定です。</p><label id="folder-drop" class="folder-drop"><span class="folder-icon"><svg><use href="#i-folder"/></svg></span><strong id="folder-name">クリックまたはフォルダーをドロップ</strong><span>音声ファイルとラベルファイルが入ったフォルダー</span><input id="folder-input" type="file" webkitdirectory multiple></label><div class="batch-summary"><span id="batch-summary">フォルダー未選択</span><button id="batch-export" class="primary-button" disabled><svg><use href="#i-download"/></svg>一括処理してZIPを作成</button></div><div class="table-scroll"><table class="batch-table"><thead><tr><th>音声ファイル</th><th>ラベル</th><th>状態</th></tr></thead><tbody id="batch-body"><tr><td colspan="3" class="empty-table">選択したフォルダーの音声がここに表示されます</td></tr></tbody></table></div><a id="zip-download" class="download-result" hidden><svg><use href="#i-download"/></svg><span></span></a></section>
+    </section>
+
+    <div id="progress-panel" class="progress-panel" hidden><div><span id="progress-label" role="status">準備中…</span><span id="progress-percent">0%</span></div><progress id="progress" max="1" value="0"></progress><button id="cancel" class="text-button">キャンセル</button></div>
+    <footer class="workspace-footer"><span>透過MOV / ラベルファイル使用</span><a href="README.md" target="_blank" rel="noopener">使い方</a></footer>
+  </main>
+  <noscript>このアプリを使用するにはJavaScriptを有効にしてください。</noscript>
+</body>
+</html>
