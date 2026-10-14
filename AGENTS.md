@@ -1,7 +1,11 @@
 ## 作成したいもの
+- LipSync Web
 - lip_sync_toolの機能のうち、Rhubarbを使わずにラベルファイル使う場合のみの機能を持ったGitHub Pagesで公開できる形の静的webアプリ
   - https://github.com/r-1317/lip_sync_tool
-- カラーテーマはライトモードのみに対応
 - Windows, macOS, LinuxのChromeで動作する
 - 動画の形式は問わないが、背景の透過は必須
-- 
+- カラーテーマはライトモードのみに対応
+- ロゴはlip_sync_toolと類似のもの
+- リポジトリ直下のindex.htmlを開くとそのページが出るような構造
+- 説明文は必要なものだけ
+  - キャッチフレーズのようなものは不要
