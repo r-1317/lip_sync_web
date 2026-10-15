@@ -406,8 +406,6 @@
     finally { state.loading--; updateReady(); }
   }
   function showPlaybackNotice() {
-    const platform = navigator.userAgentData?.platform;
-    if (platform ? !/^(Windows|macOS)$/.test(platform) : !/Windows|Macintosh/i.test(navigator.userAgent)) return;
     const key = 'lipsync-playback-notice-seen';
     try {
       // Preserve the first-visit behavior for users who already saw the Windows notice.
