@@ -405,6 +405,16 @@
     } catch (error) { for (const image of Object.values(prepared)) disposeImage(image); throw error; }
     finally { state.loading--; updateReady(); }
   }
+  function showWindowsPlaybackNotice() {
+    const platform = navigator.userAgentData?.platform;
+    if (platform ? platform !== 'Windows' : !/Windows/i.test(navigator.userAgent)) return;
+    const key = 'lipsync-windows-playback-notice-seen';
+    try { if (localStorage.getItem(key) === '1') return; }
+    catch { /* Storage may be unavailable in the browser's privacy settings. */ }
+    $('windows-playback-notice').showModal();
+    try { localStorage.setItem(key, '1'); }
+    catch { /* Keep the app usable even when the notice cannot be remembered. */ }
+  }
   for (const button of document.querySelectorAll('[data-page]')) button.addEventListener('click', () => {
     if (state.busy) return;
     for (const nav of document.querySelectorAll('[data-page]')) { const active = nav === button; nav.classList.toggle('active', active); if (active) nav.setAttribute('aria-current', 'page'); else nav.removeAttribute('aria-current'); }
@@ -440,4 +450,5 @@
   document.addEventListener('visibilitychange', () => { if (document.hidden && state.playing) pause(); });
   imageSlots(); renderMapping(); drawTimeline(); updateReady();
   if (!window.AudioContext || !window.createImageBitmap) message('このアプリには最新のChromeを使用してください。');
+  showWindowsPlaybackNotice();
 })();
