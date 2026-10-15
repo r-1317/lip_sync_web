@@ -405,13 +405,16 @@
     } catch (error) { for (const image of Object.values(prepared)) disposeImage(image); throw error; }
     finally { state.loading--; updateReady(); }
   }
-  function showWindowsPlaybackNotice() {
+  function showPlaybackNotice() {
     const platform = navigator.userAgentData?.platform;
-    if (platform ? platform !== 'Windows' : !/Windows/i.test(navigator.userAgent)) return;
-    const key = 'lipsync-windows-playback-notice-seen';
-    try { if (localStorage.getItem(key) === '1') return; }
+    if (platform ? !/^(Windows|macOS)$/.test(platform) : !/Windows|Macintosh/i.test(navigator.userAgent)) return;
+    const key = 'lipsync-playback-notice-seen';
+    try {
+      // Preserve the first-visit behavior for users who already saw the Windows notice.
+      if (localStorage.getItem(key) === '1' || localStorage.getItem('lipsync-windows-playback-notice-seen') === '1') return;
+    }
     catch { /* Storage may be unavailable in the browser's privacy settings. */ }
-    $('windows-playback-notice').showModal();
+    $('playback-notice').showModal();
     try { localStorage.setItem(key, '1'); }
     catch { /* Keep the app usable even when the notice cannot be remembered. */ }
   }
@@ -450,5 +453,5 @@
   document.addEventListener('visibilitychange', () => { if (document.hidden && state.playing) pause(); });
   imageSlots(); renderMapping(); drawTimeline(); updateReady();
   if (!window.AudioContext || !window.createImageBitmap) message('このアプリには最新のChromeを使用してください。');
-  showWindowsPlaybackNotice();
+  showPlaybackNotice();
 })();
