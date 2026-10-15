@@ -1009,29 +1009,6 @@ h3 {
   color:#377c62
 }
 
-.playback-notice {
-  width:min(460px,calc(100% - 32px));
-  padding:28px;
-  border:1px solid var(--line);
-  border-radius:12px;
-  background:var(--white);
-  color:var(--ink);
-  box-shadow:0 16px 48px #22334626
-}
-
-.playback-notice::backdrop {
-  background:#22334666
-}
-
-.playback-notice p {
-  line-height:1.8;
-  margin:16px 0
-}
-
-.playback-notice form {
-  margin-top:24px
-}
-
 .text-button {
   display:inline-flex;
   align-items:center;

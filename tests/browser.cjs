@@ -50,7 +50,6 @@ function probe(file) {
   page.on('pageerror', error => errors.push(error.message));
   page.on('request', request => { if (/^https?:/.test(request.url()) && !['127.0.0.1', 'localhost'].includes(new URL(request.url()).hostname)) external.push(request.url()); });
   await page.goto(pathToFileURL(path.join(root, 'index.html')).href); await page.waitForSelector('[data-slot="closed"]');
-  if (await page.locator('#windows-playback-notice').isVisible()) await page.getByRole('button', {name: '確認しました'}).click();
   assert.equal(await page.title(), 'LipSync Web'); assert.equal(await page.locator('#export').isDisabled(), true);
   await page.screenshot({path: path.join(artifacts, 'empty-desktop.png'), fullPage: true}); checks.push('direct file:// startup without remote requests');
 
@@ -191,7 +190,6 @@ function probe(file) {
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   await page.goto(`http://127.0.0.1:${server.address().port}/preview/lip_sync_web/index.html`);
   await page.waitForSelector('[data-slot="closed"]'); assert.equal(await page.locator('.image-slot').count(), 2);
-  if (await page.locator('#windows-playback-notice').isVisible()) await page.getByRole('button', {name: '確認しました'}).click();
   assert.equal(await page.locator('.sidebar').evaluate(element => getComputedStyle(element).backgroundColor), 'rgb(255, 255, 255)');
   await page.locator('[data-page="batch"]').click(); await dropFolder(page, [voices]);
   await page.waitForFunction(() => document.getElementById('folder-name').textContent === 'batch' && document.querySelectorAll('#batch-body tr').length === 5);
