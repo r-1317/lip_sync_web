@@ -133,13 +133,13 @@
       const frame = keyframe ? encoded[slot] : repeat;
       if (keyframe) { keys.push(i + 1); lastKey = i; }
       offsets.push(offset); sizes.push(frame.size); chunks.push(frame); offset += frame.size; lastSlot = slot;
-      if (offset > MAX_BYTES) throw new Error('MOVが2 GBを超えます。画像サイズまたは音声の長さを減らしてください。');
+      if (offset > MAX_BYTES) throw new Error('MOVが 2 GBを超えます。音声の長さを減らすか口だけの画像を使用してください。');
       if (i % 512 === 511) { onProgress(.3 + .35 * i / count, '動画のタイムラインを作成中…'); await yieldTask(); checkCancelled(signal); }
     }
     onProgress(.7, '音声を組み込み中…');
     const pcm = await pcm16(audio, signal), audioOffset = offset;
     chunks.push(pcm); offset += pcm.length;
-    if (offset > MAX_BYTES) throw new Error('MOVが2 GBを超えます。画像サイズまたは音声の長さを減らしてください。');
+    if (offset > MAX_BYTES) throw new Error('MOVが 2 GBを超えます。音声の長さを減らすか口だけの画像を使用してください。');
     const movieDuration = Math.ceil(count * 1000 / fps);
     const mvhd = full('mvhd', 0, u32(0), u32(0), u32(1000), u32(movieDuration), u32(65536), u16(256), zeros(10), matrix, zeros(24), u32(3));
     const vstbl = atom('stbl', videoDescription(width, height), full('stts', 0, u32(1), u32(count), u32(1000)), full('stss', 0, u32(keys.length), table32(keys)), full('stsc', 0, u32(1), u32(1), u32(1), u32(1)), full('stsz', 0, u32(0), u32(count), table32(sizes)), full('stco', 0, u32(offsets.length), table32(offsets)));
