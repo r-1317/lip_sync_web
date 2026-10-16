@@ -23,17 +23,19 @@
     values.forEach((n, i) => view.setUint32(i * 4, n));
     return data;
   }
-  async function encodeAnimation(rgba, width, height, signal) {
+  async function encodeAnimationRows(rgba, width, height, signal) {
     checkCancelled(signal);
     if (rgba.length !== width * height * 4) throw new Error('画像のピクセルデータが不正です。');
     const pixels = new Uint32Array(rgba.buffer, rgba.byteOffset, width * height);
     const out = new Uint8Array(7 + height * (2 + width * 4 + Math.ceil(width / 127)));
+    const rowOffsets = new Uint32Array(height + 1);
     let cursor = 6;
     const putPixel = index => {
       const p = index * 4;
       out[cursor++] = rgba[p + 3]; out[cursor++] = rgba[p]; out[cursor++] = rgba[p + 1]; out[cursor++] = rgba[p + 2];
     };
     for (let y = 0; y < height; y++) {
+      rowOffsets[y] = cursor;
       const end = (y + 1) * width;
       let i = y * width;
       out[cursor++] = 1; // Skip byte: pixel position zero.
@@ -56,9 +58,68 @@
       out[cursor++] = 255; // End of row.
       if (y % 64 === 63) { await yieldTask(); checkCancelled(signal); }
     }
+    rowOffsets[height] = cursor;
     out[cursor++] = 0;
     new DataView(out.buffer).setUint32(0, cursor);
-    return out.slice(0, cursor);
+    return {data: out.slice(0, cursor), rowOffsets};
+  }
+  async function encodeAnimation(rgba, width, height, signal) {
+    return (await encodeAnimationRows(rgba, width, height, signal)).data;
+  }
+  function animationDelta(encoded, changed, repeat, skippedRows) {
+    let start = 0, end = changed.length;
+    while (start < end && !changed[start]) start++;
+    if (start === end) return repeat;
+    while (!changed[end - 1]) end--;
+    const parts = [];
+    for (let y = start; y < end;) {
+      const first = y, update = changed[y];
+      while (y < end && changed[y] === update) y++;
+      // An empty RLE row (skip byte 1, end-of-row 255) preserves the previous row.
+      parts.push(update ? encoded.frame.slice(encoded.rowOffsets[first], encoded.rowOffsets[y]) : skippedRows.slice(0, (y - first) * 2));
+    }
+    const size = 15 + parts.reduce((n, part) => n + part.size, 0);
+    // Partial-update header: starting row, reserved, row count, reserved.
+    return new Blob([u32(size), u16(8), u16(start), u16(0), u16(end - start), u16(0), ...parts, new Uint8Array([0])]);
+  }
+  async function prepareAnimation(images, slots, width, height, signal, onProgress) {
+    const encoded = {}, transitions = Object.fromEntries(slots.map(slot => [slot, {}]));
+    // A seven-byte QuickTime Animation packet repeats the previous frame.
+    const repeat = new Blob([new Uint8Array([0, 0, 0, 7, 0, 0, 0])]);
+    const skippedRows = new Blob([Uint8Array.from({length: height * 2}, (_, i) => i % 2 ? 255 : 1)]);
+    const canvas = typeof document === 'undefined' ? null : document.createElement('canvas');
+    if (canvas) { canvas.width = width; canvas.height = height; }
+    const ctx = canvas?.getContext('2d', {willReadFrequently: true});
+    for (let i = 0; i < slots.length; i++) {
+      checkCancelled(signal);
+      const slot = slots[i], image = images[slot];
+      let rgba = image.rgba;
+      if (!rgba) { ctx.clearRect(0, 0, width, height); ctx.drawImage(image.bitmap, 0, 0); rgba = ctx.getImageData(0, 0, width, height).data; }
+      const {data, rowOffsets} = await encodeAnimationRows(rgba, width, height, signal);
+      encoded[slot] = {frame: new Blob([data]), rowOffsets, pixels: new Uint32Array(rgba.buffer, rgba.byteOffset, width * height)};
+      transitions[slot][slot] = repeat;
+      onProgress(.05 + .1 * (i + 1) / slots.length, '立ち絵をエンコード中…');
+    }
+    const pairs = slots.length * (slots.length - 1) / 2;
+    let done = 0;
+    for (let a = 0; a < slots.length; a++) for (let b = a + 1; b < slots.length; b++) {
+      checkCancelled(signal);
+      const from = slots[a], to = slots[b], previous = encoded[from].pixels, next = encoded[to].pixels;
+      const changed = new Uint8Array(height);
+      for (let y = 0; y < height; y++) {
+        for (let p = y * width, end = p + width; p < end; p++) {
+          if (previous[p] !== next[p]) { changed[y] = 1; break; }
+        }
+        if (y % 64 === 63) { await yieldTask(); checkCancelled(signal); }
+      }
+      // Row equality is symmetric; reuse each target's encoded rows in both directions.
+      transitions[from][to] = animationDelta(encoded[to], changed, repeat, skippedRows);
+      transitions[to][from] = animationDelta(encoded[from], changed, repeat, skippedRows);
+      onProgress(.15 + .15 * ++done / pairs, '口形の差分を計算中…');
+      await yieldTask();
+    }
+    for (const slot of slots) delete encoded[slot].pixels;
+    return {encoded, transitions};
   }
   function videoDescription(width, height) {
     const compressor = zeros(32), label = str('QuickTime Animation');
@@ -107,31 +168,18 @@
     const timescale = Math.round(config.fps * 1000), fps = timescale / 1000;
     const count = Math.ceil(duration * fps - 1e-9);
     if (!count || count > 2_000_000 || count * 1000 > 0xffffffff) throw new Error('音声またはラベルが長すぎます。');
-    const encoded = {};
-    const canvas = typeof document === 'undefined' ? null : document.createElement('canvas');
-    if (canvas) { canvas.width = width; canvas.height = height; }
-    const ctx = canvas?.getContext('2d', {willReadFrequently: true});
-    for (let i = 0; i < slots.length; i++) {
-      const slot = slots[i], image = images[slot];
-      let rgba = image.rgba;
-      if (!rgba) { ctx.clearRect(0, 0, width, height); ctx.drawImage(image.bitmap, 0, 0); rgba = ctx.getImageData(0, 0, width, height).data; }
-      encoded[slot] = new Blob([await encodeAnimation(rgba, width, height, signal)]);
-      onProgress(.05 + .25 * (i + 1) / slots.length, '立ち絵をエンコード中…');
-    }
-    // A seven-byte QuickTime Animation packet repeats the previous frame.
-    const repeat = new Blob([new Uint8Array([0, 0, 0, 7, 0, 0, 0])]);
+    const {encoded, transitions} = await prepareAnimation(images, slots, width, height, signal, onProgress);
+    checkCancelled(signal);
     const ftyp = atom('ftyp', str('qt  '), u32(0), str('qt  '));
-    const chunks = [], sizes = [], offsets = [], keys = [];
-    let offset = ftyp.length + 8, lastSlot, lastKey = -Infinity, cueIndex = 0;
+    const chunks = [], sizes = [], offsets = [], keys = [1];
+    let offset = ftyp.length + 8, lastSlot, cueIndex = 0;
     for (let i = 0; i < count; i++) {
       const time = i / fps;
       while (cueIndex < sheet.cues.length && sheet.cues[cueIndex].end <= time) cueIndex++;
       const cue = sheet.cues[cueIndex];
       const shape = cue && cue.start <= time && time < cue.end ? cue.value : 'X';
       const slot = config.mapping[shape];
-      const keyframe = slot !== lastSlot || i - lastKey >= Math.ceil(fps * 2);
-      const frame = keyframe ? encoded[slot] : repeat;
-      if (keyframe) { keys.push(i + 1); lastKey = i; }
+      const frame = i === 0 ? encoded[slot].frame : transitions[lastSlot][slot];
       offsets.push(offset); sizes.push(frame.size); chunks.push(frame); offset += frame.size; lastSlot = slot;
       if (offset > MAX_BYTES) throw new Error('MOVが 2 GBを超えます。音声の長さを減らすか口だけの画像を使用してください。');
       if (i % 512 === 511) { onProgress(.3 + .35 * i / count, '動画のタイムラインを作成中…'); await yieldTask(); checkCancelled(signal); }
