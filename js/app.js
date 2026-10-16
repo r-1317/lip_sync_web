@@ -406,8 +406,6 @@
     finally { state.loading--; updateReady(); }
   }
   function showPlaybackNotice() {
-    const platform = navigator.userAgentData?.platform;
-    if (platform ? !/^(Windows|macOS)$/.test(platform) : !/Windows|Macintosh/i.test(navigator.userAgent)) return;
     const key = 'lipsync-playback-notice-seen';
     try {
       // Preserve the first-visit behavior for users who already saw the Windows notice.
@@ -449,6 +447,7 @@
   $('cancel').addEventListener('click', () => { state.controller?.abort(); $('cancel').disabled = true; progress($('progress').value, 'キャンセル中…'); });
   $('save-preset').addEventListener('click', guard(savePreset)); $('load-preset').addEventListener('click', () => $('preset-input').click());
   $('preset-input').addEventListener('change', guard(async event => { if (event.target.files[0]) await loadPreset(event.target.files[0]); event.target.value = ''; }));
+  $('open-playback-notice').addEventListener('click', () => $('playback-notice').showModal());
   window.addEventListener('beforeunload', event => { if (state.busy) { event.preventDefault(); event.returnValue = ''; } });
   document.addEventListener('visibilitychange', () => { if (document.hidden && state.playing) pause(); });
   imageSlots(); renderMapping(); drawTimeline(); updateReady();

@@ -25,6 +25,7 @@
     <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14m8-14v14"/></symbol>
     <symbol id="i-reset" viewBox="0 0 24 24"><path d="M3 10a9 9 0 1 1 2 9M3 4v6h6"/></symbol>
     <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v.01"/></symbol>
     <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
   </defs></svg>
   <aside class="sidebar">
@@ -40,6 +41,8 @@
       <button id="load-preset" class="sidebar-action"><svg><use href="#i-upload"/></svg>読み込む</button>
       <button id="save-preset" class="sidebar-action"><svg><use href="#i-download"/></svg>画像と設定を保存</button>
       <input id="preset-input" type="file" accept=".json,application/json" hidden>
+      <hr class="sidebar-divider">
+      <button id="open-playback-notice" type="button" class="sidebar-action sidebar-notice" aria-haspopup="dialog" aria-controls="playback-notice"><svg aria-hidden="true"><use href="#i-info"/></svg>動画の形式について</button>
       <div class="local-note"><span class="status-dot"></span>ファイルは端末内で処理</div>
       <a class="source-link" href="https://github.com/r-1317/lip_sync_tool" target="_blank" rel="noopener noreferrer">lip_sync_tool をもとに作成 <span>↗</span></a>
     </div>
@@ -89,10 +92,10 @@
     <footer class="workspace-footer"><span>透過MOV / ラベルファイル使用</span><a href="https://github.com/r-1317/lip_sync_web#lipsync-web" target="_blank" rel="noopener">使い方</a></footer>
   </main>
   <dialog id="playback-notice" class="playback-notice" aria-labelledby="playback-notice-title" aria-describedby="playback-notice-description">
-    <h2 id="playback-notice-title">生成した動画の再生について</h2>
+    <h2 id="playback-notice-title">生成される動画の形式について</h2>
     <div id="playback-notice-description">
-      <p>このツールで生成される動画は、WindowsやmacOSの標準プレイヤーでは再生できない場合があります。</p>
-      <p>VLC media playerなどを使うことで再生できます。</p>
+      <p>このツールで生成されるQuickTime Animation形式の動画は、WindowsやmacOSの標準プレイヤーでは再生できませんのでご注意ください。</p>
+      <p>多くの動画編集ソフトでは読み込める形式ですが、対応していない編集ソフトも一部存在します。</p>
     </div>
     <form method="dialog"><button class="primary-button" autofocus>確認しました</button></form>
   </dialog>

@@ -179,10 +179,14 @@ nav {
   height:16px
 }
 
-.local-note {
-  margin:27px 10px 12px;
-  padding-top:20px;
+.sidebar-divider {
+  margin:27px 10px 9px;
+  border:0;
   border-top:1px solid var(--line);
+}
+
+.local-note {
+  margin:12px 10px;
   display:flex;
   align-items:center;
   gap:7px;
@@ -1499,19 +1503,27 @@ progress::-webkit-progress-value {
     position:absolute;
     top:20px;
     right:17px;
-    gap:12px
+    gap:3px
   }
-  .sidebar-bottom .sidebar-label,.local-note,.source-link {
+  .sidebar-bottom .sidebar-label,.sidebar-divider,.local-note,.source-link {
     display:none
   }
   .sidebar-action {
     width:auto;
     font-size:0;
-    padding:7px
+    padding:7px;
+    gap:0
   }
   .sidebar-action svg {
     width:17px;
     height:17px
+  }
+  .sidebar-notice {
+    font-size:10px;
+    white-space:nowrap
+  }
+  .sidebar-notice svg {
+    display:none
   }
   main {
     margin-left:0;
